@@ -1,0 +1,12 @@
+# Created and modified by checkpoint; do not edit
+# $Id: CVSVersionInfo.txt,v 1.206 2010/11/08 00:58:42 lukeh Exp $
+# $Name: pam_ldap-186 $
+ProjectName: pam_ldap
+ProjectVersion: 186
+ProjectMaintainer: lukeh
+# run this before building in RC. @@@PLATFORM@@@ is
+# substituted for our platform names (linux, solaris etc)
+PreBuild: configure --with-ldap-lib=netscape4 --with-ldap-dir=/usr/local/ldapsdk4 --enable-rfc2307bis --disable-ssl
+PostBuild: make distclean
+# binaries to ship (although we don't do that at the moment)
+Shippables: pam_ldap.so
