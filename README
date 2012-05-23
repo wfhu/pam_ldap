@@ -1,6 +1,14 @@
 I forked the code pam_ldap-186 from PADL, and add some features i need
+
 	* users with host attribute '*' will beable to login any system, even WITHOUT hostname properly set.
 	* host attribute can be the first ip address except 127.0.0.1/8 subnet
+
+
+TODO list:
+	* let pam_ldap to allow user to login if ANY of local ip address matches one of user's host attribute value
+
+
+===================================================================================================================
 
 This is yet another pam_ldap module. 
 
