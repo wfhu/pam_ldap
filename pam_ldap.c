@@ -110,8 +110,67 @@
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 
+typedef struct listNode
+{
+  struct listNode *next;
+  void *value;
+} listNode;
+
+typedef struct list
+{
+  listNode *head;
+  listNode *tail;
+  unsigned int len;
+} list;
+
+list *
+listCreate (void)
+{
+  struct list *list;
+
+  if ((list = malloc (sizeof (*list))) == NULL)
+    return NULL;
+  list->head = list->tail = NULL;
+  list->len = 0;
+  return list;
+}
+
+list *
+listAddNodeTail (list * list, void *value)
+{
+  listNode *node;
+
+  if ((node = malloc (sizeof (*node))) == NULL)
+    return NULL;
+  node->value = value;
+  if (list->len == 0)
+    {
+      list->head = list->tail = node;
+    }
+  else
+    {
+      list->tail->next = node;
+      list->tail = node;
+    }
+  list->len++;
+  return list;
+}
+
+void
+showList (list * list)
+{
+  listNode *node;
+  node = list->head;
+  int i;
+  for (i = 0; i < list->len; i++)
+    {
+      printf ("%d th value is %s\n", i, node->value);
+      node = node->next;
+    }
+}
+
 int
-getlocalip (char *outip)
+getlocalip (list * list)
 {
   int i = 0;
   int sockfd;
@@ -129,21 +188,61 @@ getlocalip (char *outip)
   ioctl (sockfd, SIOCGIFCONF, &ifconf);
   close (sockfd);
   ifreq = (struct ifreq *) buf;
-  for (i = (ifconf.ifc_len / sizeof (struct ifreq)); i > 0; i--)
+
+
+  int if_num = (ifconf.ifc_len / sizeof (struct ifreq));
+
+
+//  for (i = (ifconf.ifc_len / sizeof (struct ifreq)); i > 0; i--)
+  for (i = 0; i < if_num; i++)
     {
+//      printf("number is %d\n", i);
       ip = inet_ntoa (((struct sockaddr_in *) &(ifreq->ifr_addr))->sin_addr);
 
-      if (strncmp (ip, "127.0.0.1", 3) == 0)
+/*      if (strcmp (ip, "127.0.0.1") == 0)
 	{
 	  ifreq++;
 	  continue;
 	}
-      strcpy (outip, ip);
-      return 0;
+*/
+//      printf("ifreq is %ld, size is %d\n", ifreq, sizeof(ifreq));
+      char *temp_ip;
+      temp_ip = (char *) malloc (20 * sizeof (char));
+      strcpy (temp_ip, ip);
+      list = listAddNodeTail (list, temp_ip);
+      ifreq++;
+      continue;
+//      return 0;
     }
 
-  return -1;
+//  return -1;
+//return the number of ip addresses
+  printf ("the number of Interface is %d\n", i);
+  return i;
 }
+
+int
+main ()
+{
+  struct list *list;
+
+  list = listCreate ();
+
+
+  int i = getlocalip (list);
+  if (i > 0)
+    {
+      listNode *node;
+      node = list->head;
+      int k;
+      for (k = 0; k < list->len; k++)
+	{
+	  printf ("本机#%d IP地址是： %s\n", k, node->value);
+	  node = node->next;
+	}
+    }
+}
+
 
 #if defined(HAVE_CRYPT_H)
 #include <crypt.h>
@@ -2603,12 +2702,27 @@ _host_ok (pam_ldap_session_t * session)
 	}
     }
 
-  char ip[20];
-  if(getlocalip(ip)==0)
-  {
-      if(_has_value (session->info->hosts_allow, ip))
+
+// we check if the ip list matches any of the host attributes
+  struct list *list;
+
+  list = listCreate ();
+
+  int i = getlocalip (list);
+  if (i > 0)
+    {
+      listNode *node;
+      node = list->head;
+      int k;
+      for (k = 0; k < list->len; k++)
+	{
+//	  printf ("本机#%d IP地址是： %s\n", k, node->value);
+	  node = node->next;
+  	if(_has_value (session->info->hosts_allow, node->value))
           return PAM_SUCCESS;
-  }
+	}
+    }
+
 
   /* allow wild-card entries */
   if (_has_value (session->info->hosts_allow, "*"))
