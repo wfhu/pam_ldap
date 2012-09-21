@@ -2629,6 +2629,13 @@ _service_ok (pam_handle_t * pamh, pam_ldap_session_t * session)
 static int
 _host_ok (pam_ldap_session_t * session)
 {
+
+  /* allow wild-card entries, weather or not the server has correct hostname */
+  if (_has_value (session->info->hosts_allow, "*"))
+    {
+      return PAM_SUCCESS;
+    }
+
   char hostname[MAXHOSTNAMELEN];
   struct hostent *h;
 #ifdef HAVE_GETHOSTBYNAME_R
@@ -2723,12 +2730,6 @@ _host_ok (pam_ldap_session_t * session)
 	}
     }
 
-
-  /* allow wild-card entries */
-  if (_has_value (session->info->hosts_allow, "*"))
-    {
-      return PAM_SUCCESS;
-    }
 
   return PAM_PERM_DENIED;
 }
